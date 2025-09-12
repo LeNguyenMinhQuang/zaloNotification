@@ -502,3 +502,17 @@ D:\SigmaNotificationBackEnd\sigmanotificationbackend\obj\Debug\net9.0\ref\SigmaN
 D:\SigmaNotificationBackEnd\sigmanotificationbackend\bin\Debug\net9.0\Quartz.dll
 D:\SigmaNotificationBackEnd\sigmanotificationbackend\bin\Debug\net9.0\Quartz.Extensions.DependencyInjection.dll
 D:\SigmaNotificationBackEnd\sigmanotificationbackend\bin\Debug\net9.0\Quartz.Extensions.Hosting.dll
+D:\Sigma\zaloNotification\obj\Debug\net9.0\SigmaNotificationBackend.csproj.AssemblyReference.cache
+D:\Sigma\zaloNotification\obj\Debug\net9.0\rpswa.dswa.cache.json
+D:\Sigma\zaloNotification\obj\Debug\net9.0\SigmaNotificationBackend.GeneratedMSBuildEditorConfig.editorconfig
+D:\Sigma\zaloNotification\obj\Debug\net9.0\SigmaNotificationBackend.AssemblyInfoInputs.cache
+D:\Sigma\zaloNotification\obj\Debug\net9.0\SigmaNotificationBackend.AssemblyInfo.cs
+D:\Sigma\zaloNotification\obj\Debug\net9.0\SigmaNotificationBackend.csproj.CoreCompileInputs.cache
+D:\Sigma\zaloNotification\obj\Debug\net9.0\SigmaNotificationBackend.MvcApplicationPartsAssemblyInfo.cs
+D:\Sigma\zaloNotification\obj\Debug\net9.0\SigmaNotificationBackend.MvcApplicationPartsAssemblyInfo.cache
+D:\Sigma\zaloNotification\obj\Debug\net9.0\SigmaNotificationBackend.RazorAssemblyInfo.cache
+D:\Sigma\zaloNotification\obj\Debug\net9.0\SigmaNotificationBackend.RazorAssemblyInfo.cs
+D:\Sigma\zaloNotification\obj\Debug\net9.0\SigmaNotificationBackend.sourcelink.json
+D:\Sigma\zaloNotification\obj\Debug\net9.0\SigmaNotificationBackend.dll
+D:\Sigma\zaloNotification\obj\Debug\net9.0\refint\SigmaNotificationBackend.dll
+D:\Sigma\zaloNotification\obj\Debug\net9.0\SigmaNotificationBackend.pdb

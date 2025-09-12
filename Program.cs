@@ -1,12 +1,12 @@
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Quartz;
 using SigmaNotificationBackend.Data;
+using SigmaNotificationBackend.Jobs;
 using SigmaNotificationBackend.Models;
 using SigmaNotificationBackend.Services;
-using System.Text;
-using Quartz;
-using SigmaNotificationBackend.Jobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,9 +26,11 @@ builder.Services.AddQuartz(q =>
 {
     var fetcherJobKey = new JobKey("ScheduledDashboardFetcherJob");
     var dispatcherJobKey = new JobKey("ProductionMessageDispatcherJob"); // JobKey mới
+    var escalationJobKey = new JobKey("EscalationDispatcherJob");
 
     q.AddJob<ScheduledDashboardFetcher>(opts => opts.WithIdentity(fetcherJobKey));
     q.AddJob<ProductionMessageDispatcherService>(opts => opts.WithIdentity(dispatcherJobKey)); // Đăng ký job mới
+    q.AddJob<EscalationDispatcherService>(opts => opts.WithIdentity(escalationJobKey));
 
     var cronTimes = new[]
     {
@@ -60,6 +62,14 @@ builder.Services.AddQuartz(q =>
             )
         );
     }
+
+    q.AddTrigger(t => t
+        .ForJob(escalationJobKey)
+        .WithIdentity("EscalationDispatcherTrigger")
+        .WithCronSchedule("0 0/5 * * * ?", x => x
+            .InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"))
+        )
+    );
 });
 
 

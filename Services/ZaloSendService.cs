@@ -10,7 +10,7 @@ namespace SigmaNotificationBackend.Services
         Task SendMessageToUserAsync(string userId, string message);
         Task SendDepartmentSelectionTemplateAsync(string userId);
         Task HandleDepartmentSelectionAsync(string userId, string messageText);
-        Task SendCombinedProductionMessageTemplateAsync(string userId, List<dynamic> messages, DateTime sendTime);
+        Task SendCombinedProductionMessageTemplateAsync(string userId, List<dynamic> messages, DateTime sendTime, string? extraNote);
         Task MarkMessageAsViewedByUserAsync(int messageId, string userId);
     }
 
@@ -82,7 +82,124 @@ namespace SigmaNotificationBackend.Services
         }
 
 
-        public async Task SendCombinedProductionMessageTemplateAsync(string userId, List<dynamic> messages, DateTime sendTime)
+        // public async Task SendCombinedProductionMessageTemplateAsync(string userId, List<dynamic> messages, DateTime sendTime)
+        // {
+        //     var token = await _tokenStorage.GetCurrentAccessTokenAsync();
+        //     if (string.IsNullOrEmpty(token)) return;
+
+        //     string GetShiftTimeLabel(DateTime time)
+        //     {
+        //         var vn = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+        //         var t = TimeZoneInfo.ConvertTimeFromUtc(time.ToUniversalTime(), vn);
+        //         var hour = t.Hour;
+        //         var minute = t.Minute;
+
+        //         if (hour == 10 && minute >= 10 && minute <= 20) return "08h00 - 10h10";  // Vào lúc 10:15 gửi → ca 08h00-10h10
+        //         if (hour == 13 && minute >= 0 && minute <= 10) return "11h00 - 13h00";   // Vào lúc 13:05 gửi → ca 11h00-13h00  
+        //         if (hour == 15 && minute >= 10 && minute <= 20) return "13h00 - 15h10";  // Vào lúc 15:15 gửi → ca 13h00-15h10
+        //         if (hour == 18 && minute >= 5 && minute <= 15) return "15h10 - 18h00";   // Vào lúc 18:10 gửi → ca 15h10-18h00
+        //         if (hour == 22 && minute >= 25 && minute <= 35) return "18h00 - 20h00";  // Vào lúc 22:39 gửi → ca 18h00-20h00
+
+        //         return "uknown";
+        //     }
+
+        //     string FormatContent(List<dynamic> groupedMessages)
+        //     {
+        //         var groupedByOperation = groupedMessages
+        //             .GroupBy(m => m.operation)
+        //             .ToList();
+
+        //         var sb = new System.Text.StringBuilder();
+
+        //         sb.AppendLine($"🔔 Time: {GetShiftTimeLabel(sendTime)}");
+
+
+        //         foreach (var operationGroup in groupedByOperation)
+        //         {
+        //             var op = operationGroup.Key?.ToString()?.Trim() ?? "Unknown";
+        //             sb.AppendLine(FormatOperationLine(op, 25));
+
+
+        //             foreach (var msg in operationGroup)
+        //             {
+        //                 string content = msg.content.ToString()
+        //                     .Replace("bg-danger", "❌")
+        //                     .Replace("bg-warning", "⚠️")
+        //                     .Replace("[", "")
+        //                     .Replace("]", "")
+        //                     .Replace(";", " -");
+
+        //                 sb.AppendLine(content.Trim());
+        //                 sb.AppendLine();
+        //             }
+        //         }
+
+        //         return sb.ToString().Trim();
+
+
+        //         string FormatOperationLine(string operation, int totalLength = 26)
+        //         {
+        //             operation = operation.Trim();
+        //             string leftEquals = new string('=', 3);
+        //             int remaining = totalLength - leftEquals.Length - operation.Length;
+
+        //             string rightEquals = remaining > 0 ? new string('=', remaining) : "";
+        //             return $"{leftEquals}{operation}{rightEquals}";
+        //         }
+        //     }
+
+        //     var messageText = FormatContent(messages);
+
+        //     var url = "https://openapi.zalo.me/v3.0/oa/message/cs";
+
+        //     var messageId = messages.FirstOrDefault()?.id_message?.ToString() ?? "unknown";
+
+        //     var payload = new
+        //     {
+        //         recipient = new { user_id = userId },
+        //         message = new
+        //         {
+        //             text = messageText,
+        //             attachment = new
+        //             {
+        //                 type = "template",
+        //                 payload = new
+        //                 {
+        //                     template_type = "text",
+        //                     buttons = new[]
+        //         {
+        //             new { title = "Đã xem", type = "oa.query.show", payload = $"Đã xem tin nhắn: {messageId}" }
+        //         }
+        //                 }
+        //             }
+        //         }
+        //     };
+
+
+        //     var request = new HttpRequestMessage(HttpMethod.Post, url)
+        //     {
+        //         Content = JsonContent.Create(payload)
+        //     };
+
+        //     request.Headers.Add("access_token", token);
+        //     var response = await _httpClient.SendAsync(request);
+        //     var result = await response.Content.ReadAsStringAsync();
+
+        //     if (!response.IsSuccessStatusCode)
+        //     {
+        //         _logger.LogError("❌ Gửi tin nhắn thất bạn : {Result}", result);
+        //     }
+        //     else
+        //     {
+        //         _logger.LogInformation("✅ Gửi tin nhắn thành công tới {UserId}", userId);
+        //     }
+        // }
+
+        public async Task SendCombinedProductionMessageTemplateAsync(
+    string userId,
+    List<dynamic> messages,
+    DateTime sendTime,
+    string? extraNote = null) // 🔥 thêm tham số optional
         {
             var token = await _tokenStorage.GetCurrentAccessTokenAsync();
             if (string.IsNullOrEmpty(token)) return;
@@ -94,13 +211,13 @@ namespace SigmaNotificationBackend.Services
                 var hour = t.Hour;
                 var minute = t.Minute;
 
-                if (hour == 10 && minute >= 10 && minute <= 20) return "08h00 - 10h10";  // Vào lúc 10:15 gửi → ca 08h00-10h10
-                if (hour == 13 && minute >= 0 && minute <= 10) return "11h00 - 13h00";   // Vào lúc 13:05 gửi → ca 11h00-13h00  
-                if (hour == 15 && minute >= 10 && minute <= 20) return "13h00 - 15h10";  // Vào lúc 15:15 gửi → ca 13h00-15h10
-                if (hour == 18 && minute >= 5 && minute <= 15) return "15h10 - 18h00";   // Vào lúc 18:10 gửi → ca 15h10-18h00
-                if (hour == 22 && minute >= 25 && minute <= 35) return "18h00 - 20h00";  // Vào lúc 22:39 gửi → ca 18h00-20h00
+                if (hour == 10 && minute >= 10 && minute <= 20) return "08h00 - 10h10";
+                if (hour == 13 && minute >= 0 && minute <= 10) return "11h00 - 13h00";
+                if (hour == 15 && minute >= 10 && minute <= 20) return "13h00 - 15h10";
+                if (hour == 18 && minute >= 5 && minute <= 15) return "15h10 - 18h00";
+                if (hour == 22 && minute >= 25 && minute <= 35) return "18h00 - 20h00";
 
-                return "uknown";
+                return "unknown";
             }
 
             string FormatContent(List<dynamic> groupedMessages)
@@ -111,14 +228,19 @@ namespace SigmaNotificationBackend.Services
 
                 var sb = new System.Text.StringBuilder();
 
-                sb.AppendLine($"🔔 Time: {GetShiftTimeLabel(sendTime)}");
+                // 🔥 nếu có extraNote (dùng cho escalation) thì chèn vào đầu message
+                if (!string.IsNullOrEmpty(extraNote))
+                {
+                    sb.AppendLine(extraNote);
+                    sb.AppendLine("----------");
+                }
 
+                sb.AppendLine($"🔔 Time: {GetShiftTimeLabel(sendTime)}");
 
                 foreach (var operationGroup in groupedByOperation)
                 {
                     var op = operationGroup.Key?.ToString()?.Trim() ?? "Unknown";
                     sb.AppendLine(FormatOperationLine(op, 25));
-
 
                     foreach (var msg in operationGroup)
                     {
@@ -135,7 +257,6 @@ namespace SigmaNotificationBackend.Services
                 }
 
                 return sb.ToString().Trim();
-
 
                 string FormatOperationLine(string operation, int totalLength = 26)
                 {
@@ -167,14 +288,13 @@ namespace SigmaNotificationBackend.Services
                         {
                             template_type = "text",
                             buttons = new[]
-                {
-                    new { title = "Đã xem", type = "oa.query.show", payload = $"Đã xem tin nhắn: {messageId}" }
-                }
+                            {
+                        new { title = "Đã xem", type = "oa.query.show", payload = $"Đã xem tin nhắn: {messageId}" }
+                    }
                         }
                     }
                 }
             };
-
 
             var request = new HttpRequestMessage(HttpMethod.Post, url)
             {
@@ -187,13 +307,14 @@ namespace SigmaNotificationBackend.Services
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogError("❌ Gửi tin nhắn thất bạn : {Result}", result);
+                _logger.LogError("❌ Gửi tin nhắn thất bại : {Result}", result);
             }
             else
             {
                 _logger.LogInformation("✅ Gửi tin nhắn thành công tới {UserId}", userId);
             }
         }
+
 
 
         public async Task SendDepartmentSelectionTemplateAsync(string userId)
