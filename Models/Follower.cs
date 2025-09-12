@@ -21,6 +21,8 @@ namespace SigmaNotificationBackend.Models
 
         public string Avatar { get; set; }
 
+        public string? RoleDetail { get; set; }
+
 
     }
 }

@@ -27,6 +27,11 @@ public class SVN_Messages
 
     public SVN_Departments? Department { get; set; }
 
+    public string? isOperatorSeen { get; set; }
+    public string? isSupervisorSeen { get; set; }
+    public string? isManagerSeen { get; set; }
+
+
 
 }
 

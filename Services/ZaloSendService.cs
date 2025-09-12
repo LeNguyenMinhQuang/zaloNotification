@@ -277,20 +277,57 @@ namespace SigmaNotificationBackend.Services
         }
 
 
+        // public async Task MarkMessageAsViewedByUserAsync(int messageId, string userId)
+        // {
+        //     var message = await _dbcontext.SVN_Messages.FirstOrDefaultAsync(m => m.id_message == messageId);
+        //     if (message != null)
+        //     {
+        //         var currentUserIds = message.UserId?.Split(';', StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>();
+
+        //         if (!currentUserIds.Contains(userId))
+        //         {
+        //             currentUserIds.Add(userId);
+        //             message.UserId = string.Join("; ", currentUserIds);
+        //             await _dbcontext.SaveChangesAsync();
+        //         }
+        //     }
+        // }
+
         public async Task MarkMessageAsViewedByUserAsync(int messageId, string userId)
         {
-            var message = await _dbcontext.SVN_Messages.FirstOrDefaultAsync(m => m.id_message == messageId);
-            if (message != null)
-            {
-                var currentUserIds = message.UserId?.Split(';', StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>();
+            var message = await _dbcontext.SVN_Messages.FindAsync(messageId);
+            if (message == null) return;
 
-                if (!currentUserIds.Contains(userId))
+            // 1) Append userId vào danh sách UserId (giữ nguyên logic cũ)
+            if (string.IsNullOrEmpty(message.UserId))
+                message.UserId = userId;
+            else if (!message.UserId.Split(';').Contains(userId))
+                message.UserId += ";" + userId;
+
+            // 🔥 2) Lấy thông tin follower để biết RoleDetail
+            var follower = await _dbcontext.Followers.FirstOrDefaultAsync(f => f.UserId == userId);
+            if (follower != null && !string.IsNullOrEmpty(follower.RoleDetail))
+            {
+                // Chuẩn hóa roleDetail về lowercase để tránh lỗi
+                var roleDetail = follower.RoleDetail.Trim().ToLower();
+
+                // 🔥 3) Gán vào cột tương ứng nếu chưa có ai ở cấp đó xem
+                if (roleDetail == "operator" && string.IsNullOrEmpty(message.isOperatorSeen))
                 {
-                    currentUserIds.Add(userId);
-                    message.UserId = string.Join("; ", currentUserIds);
-                    await _dbcontext.SaveChangesAsync();
+                    message.isOperatorSeen = userId;
+                }
+                else if (roleDetail == "supervisor" && string.IsNullOrEmpty(message.isSupervisorSeen))
+                {
+                    message.isSupervisorSeen = userId;
+                }
+                else if (roleDetail == "manager" && string.IsNullOrEmpty(message.isManagerSeen))
+                {
+                    message.isManagerSeen = userId;
                 }
             }
+
+            // 🔥 4) Lưu DB
+            await _dbcontext.SaveChangesAsync();
         }
     }
 }
