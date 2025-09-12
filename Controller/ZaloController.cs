@@ -1,0 +1,251 @@
+﻿// Đường dẫn: SigmaNotificationBackend/Controllers/ZaloController.cs
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading.Tasks;
+using SigmaNotificationBackend.Models;
+using SigmaNotificationBackend.Services;
+using System.Text.Json;
+
+namespace SigmaNotificationBackend.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class ZaloController : ControllerBase
+    {
+        private readonly HttpClient _httpClient;
+        private readonly ZaloOAuthSettings _settings;
+        private readonly ILogger<ZaloController> _logger;
+        private readonly ITokenStorageService _tokenStorageService;
+        private readonly IZaloSendService _zaloSendService;
+
+        private readonly IFollowerStorageService _followerStorageService;
+
+
+        public ZaloController(HttpClient httpClient,
+                              IConfiguration configuration,
+                              ILogger<ZaloController> logger,
+                              ITokenStorageService tokenStorageService,
+                              IFollowerStorageService followerStorageService,
+                              IZaloSendService zaloSendService
+                              )
+        {
+            _httpClient = httpClient;
+            _logger = logger;
+            _tokenStorageService = tokenStorageService;
+            _followerStorageService = followerStorageService;
+            _zaloSendService = zaloSendService;
+
+            _settings = new ZaloOAuthSettings();
+            configuration.GetSection("ZaloOAuth").Bind(_settings);
+        }
+
+
+        [HttpGet("callback")]
+        public async Task<IActionResult> ZaloCallback([FromQuery] string code, [FromQuery] string oa_id, [FromQuery] int? error, [FromQuery] string? message)
+        {
+
+
+            if (error.HasValue && error != 0)
+            {
+
+                return BadRequest($"Error from Zalo: {message ?? "Unknown error from Zalo authorization"}");
+            }
+
+            if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(oa_id))
+            {
+
+                return BadRequest("Zalo callback is missing required parameters (code or oa_id).");
+            }
+
+
+
+            ZaloTokenResponse? tokenResponse = null; // Khởi tạo null
+            try
+            {
+                tokenResponse = await ExchangeCodeForTokens(code);
+
+                if (tokenResponse != null && tokenResponse.Error == 0)
+                {
+                    // Lưu trữ vào Database
+                    if (!string.IsNullOrEmpty(tokenResponse.AccessToken) &&
+                        !string.IsNullOrEmpty(tokenResponse.RefreshToken))
+                    {
+                        await _tokenStorageService.SaveTokensAsync(
+                     tokenResponse.AccessToken,
+                    tokenResponse.RefreshToken,
+                     (int)Math.Min(tokenResponse.ExpiresIn, int.MaxValue)
+
+  );
+                        return Ok("Cấp quyền Zalo thành công! Token đã được lưu vào database.");
+                    }
+                    else
+                    {
+                        return StatusCode(500, "Thất bại khi lưu token vào database. Vui lòng thử lại sau.");
+                    }
+                }
+                else
+                {
+                    var errorMessage = tokenResponse?.Message ?? "Unknown error during token exchange.";
+                    return StatusCode(500, $"Failed to exchange Zalo code for tokens: {errorMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An internal server error occurred during Zalo authorization.");
+            }
+        }
+
+
+
+
+        // Hàm ExchangeCodeForTokens gọi API Zalo và trả về ZaloTokenResponse
+        private async Task<ZaloTokenResponse?> ExchangeCodeForTokens(string authCode)
+        {
+            // Tạo body cho form-urlencoded
+            var content = new FormUrlEncodedContent(new[]
+            {
+        new KeyValuePair<string, string>("app_id", _settings.AppId),
+        new KeyValuePair<string, string>("code", authCode),
+        new KeyValuePair<string, string>("grant_type", "authorization_code")
+    });
+
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://oauth.zaloapp.com/v4/oa/access_token")
+            {
+                Content = content
+            };
+
+            // Đính kèm secret_key vào header
+            request.Headers.Add("secret_key", _settings.SecretKey);
+
+            HttpResponseMessage? response = null;
+
+            try
+            {
+                _logger.LogInformation($"Calling Zalo OA access_token API with AppId: {_settings.AppId}, Code: {authCode}");
+                response = await _httpClient.SendAsync(request);
+
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"Zalo access_token API raw response: {jsonResponse}");
+
+                var tokenResponse = JsonSerializer.Deserialize<ZaloTokenResponse>(jsonResponse);
+
+                if (!response.IsSuccessStatusCode || tokenResponse?.Error != 0)
+                {
+                    _logger.LogError($"Zalo access_token API returned error. Status: {response.StatusCode}, Error: {tokenResponse?.Error}, Message: {tokenResponse?.Message}");
+                    return tokenResponse;
+                }
+
+                return tokenResponse;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError($"HTTP request error during code exchange: {ex.Message}");
+                return new ZaloTokenResponse { Error = -1, Message = $"HTTP request failed: {ex.Message}" };
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError($"JSON error during code exchange: {ex.Message}. Raw: {(response != null ? await response.Content.ReadAsStringAsync() : "N/A")}");
+                return new ZaloTokenResponse { Error = -1, Message = $"JSON error: {ex.Message}" };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Unexpected error during code exchange: {ex.Message}");
+                return new ZaloTokenResponse { Error = -1, Message = $"Unexpected error: {ex.Message}" };
+            }
+        }
+
+
+        // Endpoint nhận các sự kiện Webhook từ Zalo Official Account.
+
+        [HttpPost("webhook")]
+        public async Task<IActionResult> ZaloWebhook([FromBody] ZaloWebhookEvent webhookEvent)
+        {
+            _logger.LogInformation($"Received Zalo webhook event: {JsonSerializer.Serialize(webhookEvent)}");
+
+            if (webhookEvent == null)
+            {
+                return BadRequest("Invalid webhook event.");
+            }
+
+            switch (webhookEvent.EventName)
+            {
+                case "follow":
+                    {
+                        var userId = webhookEvent.Follower?.Id;
+
+                        if (!string.IsNullOrEmpty(userId))
+                        {
+                            _logger.LogInformation("✅ Người quan tâm mới {UserId}", userId);
+
+                            await _followerStorageService.AddFollowerAsync(userId);
+                        }
+
+                    }
+                    break;
+
+                case "unfollow":
+
+                    var userId1 = webhookEvent.Follower?.Id;
+                    if (!string.IsNullOrEmpty(userId1))
+                    {
+                        _logger.LogInformation($"Người dùng đã bỏ quan tâm! User ID: {userId1}");
+                        await _followerStorageService.RemoveFollowerAsync(userId1);
+                    }
+                    else
+                    {
+                        // _logger.LogWarning("Unfollow event received but user ID is missing.");
+                    }
+                    break;
+
+                case "user_send_text":
+                    {
+                        var senderUserId = webhookEvent.Sender?.Id;
+                        var receivedMessage = webhookEvent.Message?.Text;
+
+                        if (!string.IsNullOrEmpty(senderUserId) && !string.IsNullOrEmpty(receivedMessage))
+                        {
+                            _logger.LogInformation($"Received message from User ID {senderUserId}: \"{receivedMessage}\"");
+
+                            // Nếu là lựa chọn phòng ban → xử lý cập nhật role
+                            if (receivedMessage.StartsWith("department:", StringComparison.OrdinalIgnoreCase))
+                            {
+                                await _zaloSendService.HandleDepartmentSelectionAsync(senderUserId, receivedMessage);
+                            }
+
+
+                            else if (receivedMessage.StartsWith("Đã xem tin nhắn: ", StringComparison.OrdinalIgnoreCase))
+                            {
+                                var parts = receivedMessage.Split(':', StringSplitOptions.RemoveEmptyEntries);
+                                if (parts.Length == 2 && int.TryParse(parts[1], out int messageId))
+                                {
+                                    await _zaloSendService.MarkMessageAsViewedByUserAsync(messageId, senderUserId);
+
+                                }
+                            }
+
+
+                            else
+                            {
+                                _logger.LogWarning("User send text event received but sender ID or message text is missing.");
+                            }
+                        }
+
+                        break;
+                    }
+
+                default:
+                    _logger.LogInformation($"Unhandled Zalo webhook event: {webhookEvent.EventName}");
+                    break;
+            }
+            return Ok();
+        }
+
+
+    }
+
+
+}
+
