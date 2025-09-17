@@ -22,6 +22,9 @@ public class SVN_Messages
 
     public int isSent { get; set; }
 
+    public int isSentToSupervisor { get; set; } = 0; // 0: chưa gửi supervisor, 1: đã gửi
+    public int isSentToManager { get; set; } = 0; // 0: chưa gửi manager,    1: đã gửi
+
     [ForeignKey("Department")]
     public int to_department { get; set; }
 
