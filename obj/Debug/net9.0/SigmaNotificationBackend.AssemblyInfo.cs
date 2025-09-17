@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SigmaNotificationBackend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0fb27c9fbea7fe5d42bacef93b0be0b69003e7be")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a0110094ac978da061b6be0718e6cf2c684bc4f9")]
 [assembly: System.Reflection.AssemblyProductAttribute("SigmaNotificationBackend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SigmaNotificationBackend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
