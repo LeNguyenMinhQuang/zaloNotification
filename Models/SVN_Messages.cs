@@ -27,6 +27,9 @@ public class SVN_Messages
 
     public SVN_Departments? Department { get; set; }
 
+    public int? isSentToSupervisor { get; set; } = 0; // 0: chưa gửi supervisor, 1: đã gửi
+    public int? isSentToManager { get; set; } = 0; // 0: chưa gửi manager,    1: đã gửi
+
     public string? isOperatorSeen { get; set; }
     public string? isSupervisorSeen { get; set; }
     public string? isManagerSeen { get; set; }
