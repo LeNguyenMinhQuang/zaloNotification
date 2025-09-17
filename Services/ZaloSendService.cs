@@ -10,7 +10,7 @@ namespace SigmaNotificationBackend.Services
         Task SendMessageToUserAsync(string userId, string message);
         Task SendDepartmentSelectionTemplateAsync(string userId);
         Task HandleDepartmentSelectionAsync(string userId, string messageText);
-        Task SendCombinedProductionMessageTemplateAsync(string userId, List<dynamic> messages, DateTime sendTime, string? extraNote);
+        Task SendCombinedProductionMessageTemplateAsync(string userId, List<dynamic> messages, DateTime sendTime, string? extraNote = null);
         Task MarkMessageAsViewedByUserAsync(int messageId, string userId);
     }
 

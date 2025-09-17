@@ -1,11 +1,11 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Quartz;
 using SigmaNotificationBackend.Data;
 using SigmaNotificationBackend.Services;
-using Quartz;
-using Microsoft.Extensions.Logging;
-using System.Linq;
-using System;
-using System.Threading.Tasks;
 
 namespace SigmaNotificationBackend.Jobs
 {
@@ -39,7 +39,8 @@ namespace SigmaNotificationBackend.Jobs
                 var messagesToSend = await db.SVN_Messages
                     .Where(m => m.create_at.Date == nowVn.Date
                                 && m.create_at <= nowVn
-                                && (m.isSent == 0 || m.isSent == null))
+                    // && (m.isSent == 0 || m.isSent == null))
+                                && m.isSent == 0)
                     .ToListAsync();
 
                 var distinctMessages = messagesToSend
@@ -60,10 +61,16 @@ namespace SigmaNotificationBackend.Jobs
                     int role = departmentGroup.Key;
                     var messagesInGroup = departmentGroup.ToList();
 
+                    // var userIds = await db.Followers
+                    //     .Where(f => f.Role == role)
+                    //     .Select(f => f.UserId)
+                    //     .ToListAsync();
+
                     var userIds = await db.Followers
-                        .Where(f => f.Role == role)
-                        .Select(f => f.UserId)
-                        .ToListAsync();
+                    .Where(f => f.Role == role
+                            && (f.RoleDetail ?? string.Empty).ToLower() == "operator") // 🔥 CHỈ gửi operator
+                    .Select(f => f.UserId)
+                    .ToListAsync();
 
                     if (!userIds.Any())
                     {
@@ -177,3 +184,4 @@ namespace SigmaNotificationBackend.Jobs
     }
 
 }
+
