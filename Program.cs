@@ -37,7 +37,7 @@ builder.Services.AddQuartz(q =>
         "0 15 10 * * ?",  // 10:15
         "0 5 13 * * ?",   // 13:05
         "0 15 15 * * ?",  // 15:15
-        "0 12 15 * * ?",   // 14:52----------------------
+        "0 47 15 * * ?",   // 14:52----------------------
         "0 10 18 * * ?",  // 18:10 
         "0 30 22 * * ?"   // 22:30
 
@@ -64,7 +64,7 @@ builder.Services.AddQuartz(q =>
             )
         );
 
-        string supervisorCron = AddMinutesToCron(cron, 5); // Trigger escalation supervisor (15 phút sau);
+        string supervisorCron = AddMinutesToCron(cron, 2); // Trigger escalation supervisor (15 phút sau);
         q.AddTrigger(t => t
             .ForJob(escalationJobKey)
             .WithIdentity($"EscalationSupervisorTrigger-{index}")

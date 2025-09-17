@@ -48,7 +48,7 @@ public class EscalationDispatcherService : IJob
         .Where(m => string.IsNullOrEmpty(m.isOperatorSeen)
                 && string.IsNullOrEmpty(m.isSupervisorSeen)
                 && (m.isSentToSupervisor == 0 || m.isSentToSupervisor == null)   // 🔥 thêm check cờ
-                && (now - m.create_at).TotalMinutes >= 5)
+                && (now - m.create_at).TotalMinutes >= 1)
         .GroupBy(m => m.to_department);
 
         foreach (var deptGroup in needSupervisor)
