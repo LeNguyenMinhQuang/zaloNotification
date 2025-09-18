@@ -7,11 +7,6 @@ using SigmaNotificationBackend.Services;
 
 namespace SigmaNotificationBackend.Jobs
 {
-    /// <summary>
-    /// Job thủ công: mỗi lần chạy sẽ
-    /// 1) Gọi ScheduledDashboardFetcher để lấy dữ liệu SVN_daily_target và sinh SVN_Messages
-    /// 2) Gọi ProductionMessageDispatcherService để gửi ngay cho operator
-    /// </summary>
     public class ManualDispatcherJob : IJob
     {
         private readonly ILogger<ManualDispatcherJob> _logger;
@@ -31,22 +26,12 @@ namespace SigmaNotificationBackend.Jobs
             var fetcher = scope.ServiceProvider.GetRequiredService<ScheduledDashboardFetcher>();
             var dispatcher = scope.ServiceProvider.GetRequiredService<ProductionMessageDispatcherService>();
 
-            try
-            {
-                _logger.LogInformation("ManualDispatcherJob started at {time}", DateTime.Now);
+            _logger.LogInformation("ManualDispatcherJob started at {time}", DateTime.Now);
 
-                // 1) Lấy dữ liệu mới từ SVN_Daily_Target → ghi vào SVN_Messages
-                await fetcher.Execute(null);
+            await fetcher.Execute(context);     // đọc SVN_daily_target → ghi SVN_Messages
+            await dispatcher.Execute(context);  // gửi operator ngay
 
-                // 2) Gửi tin nhắn ngay cho operator
-                await dispatcher.Execute(null);
-
-                _logger.LogInformation("ManualDispatcherJob completed successfully at {time}", DateTime.Now);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "ManualDispatcherJob failed");
-            }
+            _logger.LogInformation("ManualDispatcherJob finished at {time}", DateTime.Now);
         }
     }
 }

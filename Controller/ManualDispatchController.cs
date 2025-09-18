@@ -3,17 +3,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Quartz;
-using SigmaNotificationBackend.Jobs;
 
 namespace SigmaNotificationBackend.Controllers
 {
-    /// <summary>
-    /// API thủ công:
-    ///   - Gọi MANUAL dispatcher: fetch dữ liệu + gửi operator NGAY LẬP TỨC
-    ///   - Đặt 2 trigger động cho EscalationDispatcherService:
-    ///       + now + 15 phút  → supervisor
-    ///       + now + 30 phút  → manager
-    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class ManualDispatchController : ControllerBase
@@ -30,44 +22,41 @@ namespace SigmaNotificationBackend.Controllers
         }
 
         [HttpGet("trigger")]
-        public async Task<IActionResult> TriggerManualDispatch()
+        public async Task<IActionResult> Trigger()
         {
             var scheduler = await _schedulerFactory.GetScheduler();
 
-            // 1) Trigger job thủ công chạy NGAY (fetch + send operator)
-            var manualJobKey = new JobKey("ManualDispatcherJob");
-            await scheduler.TriggerJob(manualJobKey);
+            // 1) chạy fetch + operator ngay
+            await scheduler.TriggerJob(new JobKey("ManualDispatcherJob"));
 
-            // 2) Schedule escalation supervisor (now + 15 phút)
+            // 2) schedule escalation one-off: +2' supervisor
             var supJob = JobBuilder.Create<EscalationDispatcherService>()
                 .WithIdentity($"ManualEscalationSupervisor-{Guid.NewGuid()}")
+                .UsingJobData("Role", "supervisor")
                 .Build();
 
             var supTrigger = TriggerBuilder.Create()
-                .StartAt(DateBuilder.FutureDate(2, IntervalUnit.Minute))
+                .StartAt(DateBuilder.FutureDate(2, IntervalUnit.Minute)) // test 2'
                 .Build();
 
             await scheduler.ScheduleJob(supJob, supTrigger);
 
-            // 3) Schedule escalation manager (now + 30 phút)
+            // 3) schedule escalation one-off: +3' manager
             var mgrJob = JobBuilder.Create<EscalationDispatcherService>()
                 .WithIdentity($"ManualEscalationManager-{Guid.NewGuid()}")
+                .UsingJobData("Role", "manager")
                 .Build();
 
             var mgrTrigger = TriggerBuilder.Create()
-                .StartAt(DateBuilder.FutureDate(30, IntervalUnit.Minute))
+                .StartAt(DateBuilder.FutureDate(3, IntervalUnit.Minute)) // test 3'
                 .Build();
 
             await scheduler.ScheduleJob(mgrJob, mgrTrigger);
 
-            _logger.LogInformation("Manual dispatch triggered at {time}. Escalation scheduled at +15m and +30m.",
+            _logger.LogInformation("Manual API called at {time}: operator sent, escalation scheduled (+2'/+3').",
                 DateTime.Now);
 
-            return Ok(new
-            {
-                success = true,
-                message = "Manual dispatcher triggered. Escalation will run at +15m and +30m from now."
-            });
+            return Ok(new { ok = true });
         }
     }
 }

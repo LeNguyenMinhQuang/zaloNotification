@@ -17,6 +17,9 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<DashboardService>();
+builder.Services.AddScoped<ScheduledDashboardFetcher>();
+builder.Services.AddScoped<ProductionMessageDispatcherService>();
+builder.Services.AddScoped<EscalationDispatcherService>();
 
 
 // Thêm dòng này để đăng ký AppDbContext cho job Quartz
@@ -29,18 +32,23 @@ builder.Services.AddQuartz(q =>
     // var escalationJobKey = new JobKey("EscalationDispatcherJob");
     var escalationSupJobKey = new JobKey("EscalationSupervisorJob");
     var escalationMgrJobKey = new JobKey("EscalationManagerJob");
+    var manualJobKey = new JobKey("ManualDispatcherJob");
 
     q.AddJob<ScheduledDashboardFetcher>(opts => opts.WithIdentity(fetcherJobKey));
     q.AddJob<ProductionMessageDispatcherService>(opts => opts.WithIdentity(dispatcherJobKey)); // Đăng ký job mới
     // q.AddJob<EscalationDispatcherService>(opts => opts.WithIdentity(escalationJobKey));
     q.AddJob<EscalationDispatcherService>(opts => opts.WithIdentity(escalationSupJobKey));
     q.AddJob<EscalationDispatcherService>(opts => opts.WithIdentity(escalationMgrJobKey));
+    q.AddJob<ManualDispatcherJob>(opts =>
+        opts.WithIdentity(manualJobKey)
+            .StoreDurably() // bắt buộc nếu không có trigger mặc định
+    );
 
     var cronTimes = new[]
     {
         "0 15 10 * * ?",  // 10:15
         "0 5 13 * * ?",   // 13:05
-        "0 35 14 * * ?",
+        // "0 53 15 * * ?",
         "0 15 15 * * ?",  // 15:15
         "0 10 18 * * ?",  // 18:10 
         "0 30 22 * * ?"   // 22:30
