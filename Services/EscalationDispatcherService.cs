@@ -61,6 +61,7 @@ public class EscalationDispatcherService : IJob
         {
             var needManager = messages
                 .Where(m => m.isSent == 1
+                         && (m.isOperatorSeen == null || m.isOperatorSeen.Trim() == "")
                          && string.IsNullOrEmpty(m.isSupervisorSeen)
                          && string.IsNullOrEmpty(m.isManagerSeen)
                          && (m.isSentToManager == 0 || m.isSentToManager == null))
@@ -96,8 +97,41 @@ public class EscalationDispatcherService : IJob
         if (followers.Count == 0) return;
 
         // ✅ Truyền cả LIST để ZaloSendService gộp format giống operator
-        var dynList = messagesForDept.Cast<dynamic>().ToList();
+        // var dynList = messagesForDept.Cast<dynamic>().ToList();
+        // var sendTime = messagesForDept.First().create_at;
+
+        List<dynamic> dynList;
         var sendTime = messagesForDept.First().create_at;
+
+        if (departmentId == 5) // QC: chỉ giữ Defect
+        {
+            var filtered = new List<dynamic>();
+            foreach (var m in messagesForDept)
+            {
+                var defectOnly = FilterDefectOnly(m.content);
+                if (!string.IsNullOrWhiteSpace(defectOnly))
+                {
+                    filtered.Add(new
+                    {
+                        id_message = m.id_message,
+                        operation = m.operation,
+                        content = defectOnly,
+                        type_message = m.type_message,
+                        create_at = m.create_at,
+                        to_department = m.to_department,
+                        UserId = m.UserId,
+                        isSent = m.isSent
+                    });
+                }
+            }
+
+            if (filtered.Count == 0) return;   // không còn gì để gửi cho QC
+            dynList = filtered.Cast<dynamic>().ToList();
+        }
+        else
+        {
+            dynList = messagesForDept.Cast<dynamic>().ToList();
+        }
 
         foreach (var follower in followers)
         {
@@ -122,6 +156,19 @@ public class EscalationDispatcherService : IJob
         }
 
         await dbContext.SaveChangesAsync();
+    }
+
+    private static string FilterDefectOnly(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content)) return string.Empty;
+
+        var parts = content.Split(';', StringSplitOptions.RemoveEmptyEntries)
+                           .Select(p => p.Trim());
+
+        var defectParts = parts.Where(p =>
+            p.Contains("defect", StringComparison.OrdinalIgnoreCase));
+
+        return string.Join(" ; ", defectParts).Trim();
     }
 }
 
