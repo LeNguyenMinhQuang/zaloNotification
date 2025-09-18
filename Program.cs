@@ -26,16 +26,21 @@ builder.Services.AddQuartz(q =>
 {
     var fetcherJobKey = new JobKey("ScheduledDashboardFetcherJob");
     var dispatcherJobKey = new JobKey("ProductionMessageDispatcherJob"); // JobKey mới
-    var escalationJobKey = new JobKey("EscalationDispatcherJob");
+    // var escalationJobKey = new JobKey("EscalationDispatcherJob");
+    var escalationSupJobKey = new JobKey("EscalationSupervisorJob");
+    var escalationMgrJobKey = new JobKey("EscalationManagerJob");
 
     q.AddJob<ScheduledDashboardFetcher>(opts => opts.WithIdentity(fetcherJobKey));
     q.AddJob<ProductionMessageDispatcherService>(opts => opts.WithIdentity(dispatcherJobKey)); // Đăng ký job mới
-    q.AddJob<EscalationDispatcherService>(opts => opts.WithIdentity(escalationJobKey));
+    // q.AddJob<EscalationDispatcherService>(opts => opts.WithIdentity(escalationJobKey));
+    q.AddJob<EscalationDispatcherService>(opts => opts.WithIdentity(escalationSupJobKey));
+    q.AddJob<EscalationDispatcherService>(opts => opts.WithIdentity(escalationMgrJobKey));
 
     var cronTimes = new[]
     {
         "0 15 10 * * ?",  // 10:15
         "0 5 13 * * ?",   // 13:05
+        "0 35 14 * * ?",
         "0 15 15 * * ?",  // 15:15
         "0 10 18 * * ?",  // 18:10 
         "0 30 22 * * ?"   // 22:30
@@ -54,7 +59,7 @@ builder.Services.AddQuartz(q =>
         );
 
 
-        string dispatcherCron = AddMinutesToCron(cron, 15);
+        string dispatcherCron = AddMinutesToCron(cron, 1);
         q.AddTrigger(t => t
             .ForJob(dispatcherJobKey)
             .WithIdentity($"ProductionMessageDispatcherTrigger-{index}")
@@ -63,23 +68,26 @@ builder.Services.AddQuartz(q =>
             )
         );
 
-        string supervisorCron = AddMinutesToCron(cron, 30); // Trigger escalation supervisor (15 phút sau);
+        // supervisor trigger sau 2 phút
+        string supervisorCron = AddMinutesToCron(cron, 2);
         q.AddTrigger(t => t
-            .ForJob(escalationJobKey)
+            .ForJob(escalationSupJobKey)
             .WithIdentity($"EscalationSupervisorTrigger-{index}")
             .WithCronSchedule(supervisorCron, x => x
                 .InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"))
             )
+            .UsingJobData("Role", "supervisor")
         );
 
-        // Trigger escalation manager (30 phút sau)
+        // manager trigger sau 3 phút
         string managerCron = AddMinutesToCron(cron, 3);
         q.AddTrigger(t => t
-            .ForJob(escalationJobKey)
+            .ForJob(escalationMgrJobKey)
             .WithIdentity($"EscalationManagerTrigger-{index}")
             .WithCronSchedule(managerCron, x => x
                 .InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"))
             )
+            .UsingJobData("Role", "manager")
         );
     }
 

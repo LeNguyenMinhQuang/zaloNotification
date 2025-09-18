@@ -33,59 +33,46 @@ public class EscalationDispatcherService : IJob
         var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vn);
         var today = now.Date;
 
-        // Lấy tất cả messages trong ngày
+        // lấy tham số từ trigger
+        var role = context.MergedJobDataMap.GetString("Role")?.ToLower();
+
         var messages = await dbContext.SVN_Messages
             .Where(m => m.create_at >= today && m.create_at < today.AddDays(1))
             .ToListAsync();
 
-        // ===== 1) Escalate lên SUPERVISOR: chưa operator xem, chưa supervisor xem, quá 5'
-        // var needSupervisor = messages
-        //     .Where(m => string.IsNullOrEmpty(m.isOperatorSeen)
-        //              && string.IsNullOrEmpty(m.isSupervisorSeen)
-        //              && (now - m.create_at).TotalMinutes >= 5)
-        //     .GroupBy(m => m.to_department);
-        var needSupervisor = messages
-        .Where(m => string.IsNullOrEmpty(m.isOperatorSeen)
-                && string.IsNullOrEmpty(m.isSupervisorSeen)
-                && (m.isSentToSupervisor == 0 || m.isSentToSupervisor == null)   // 🔥 thêm check cờ
-                && (now - m.create_at).TotalMinutes >= 13)
-        .GroupBy(m => m.to_department);
-
-        foreach (var deptGroup in needSupervisor)
+        if (role == "supervisor")
         {
-            await EscalateDeptBatchAsync(
-                zaloSendService,
-                dbContext,
-                deptGroup.Key,
-                deptGroup.ToList(),
-                roleDetail: "supervisor",
-                extraNote: "⚠️ Không operator nào đã xem"
-            );
+            var needSupervisor = messages
+                .Where(m => m.isSent == 1
+                         && string.IsNullOrEmpty(m.isOperatorSeen)
+                         && string.IsNullOrEmpty(m.isSupervisorSeen)
+                         && (m.isSentToSupervisor == 0 || m.isSentToSupervisor == null))
+                .GroupBy(m => m.to_department);
+
+            foreach (var deptGroup in needSupervisor)
+            {
+                await EscalateDeptBatchAsync(zaloSendService, dbContext,
+                    deptGroup.Key, deptGroup.ToList(),
+                    roleDetail: "supervisor",
+                    extraNote: "⚠️ Không operator nào đã xem");
+            }
         }
-
-        // ===== 2) Escalate lên MANAGER: chưa supervisor xem, chưa manager xem, quá 30'
-        // var needManager = messages
-        //     .Where(m => string.IsNullOrEmpty(m.isSupervisorSeen)
-        //              && string.IsNullOrEmpty(m.isManagerSeen)
-        //              && (now - m.create_at).TotalMinutes >= 30)
-        //     .GroupBy(m => m.to_department);
-        var needManager = messages
-        .Where(m => string.IsNullOrEmpty(m.isSupervisorSeen)
-                && string.IsNullOrEmpty(m.isManagerSeen)
-                && (m.isSentToManager == 0 || m.isSentToManager == null)        // 🔥 thêm check cờ
-                && (now - m.create_at).TotalMinutes >= 28)
-        .GroupBy(m => m.to_department);
-
-        foreach (var deptGroup in needManager)
+        else if (role == "manager")
         {
-            await EscalateDeptBatchAsync(
-                zaloSendService,
-                dbContext,
-                deptGroup.Key,
-                deptGroup.ToList(),
-                roleDetail: "manager",
-                extraNote: "⚠️ Không supervisor nào đã xem"
-            );
+            var needManager = messages
+                .Where(m => m.isSent == 1
+                         && string.IsNullOrEmpty(m.isSupervisorSeen)
+                         && string.IsNullOrEmpty(m.isManagerSeen)
+                         && (m.isSentToManager == 0 || m.isSentToManager == null))
+                .GroupBy(m => m.to_department);
+
+            foreach (var deptGroup in needManager)
+            {
+                await EscalateDeptBatchAsync(zaloSendService, dbContext,
+                    deptGroup.Key, deptGroup.ToList(),
+                    roleDetail: "manager",
+                    extraNote: "⚠️ Không supervisor nào đã xem");
+            }
         }
     }
 
