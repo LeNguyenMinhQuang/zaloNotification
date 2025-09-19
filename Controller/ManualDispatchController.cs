@@ -36,7 +36,7 @@ namespace SigmaNotificationBackend.Controllers
                 .Build();
 
             var supTrigger = TriggerBuilder.Create()
-                .StartAt(DateBuilder.FutureDate(2, IntervalUnit.Minute)) // test 2'
+                .StartAt(DateBuilder.FutureDate(9, IntervalUnit.Minute)) // test 2'
                 .Build();
 
             await scheduler.ScheduleJob(supJob, supTrigger);
@@ -48,7 +48,7 @@ namespace SigmaNotificationBackend.Controllers
                 .Build();
 
             var mgrTrigger = TriggerBuilder.Create()
-                .StartAt(DateBuilder.FutureDate(3, IntervalUnit.Minute)) // test 3'
+                .StartAt(DateBuilder.FutureDate(19, IntervalUnit.Minute)) // test 3'
                 .Build();
 
             await scheduler.ScheduleJob(mgrJob, mgrTrigger);

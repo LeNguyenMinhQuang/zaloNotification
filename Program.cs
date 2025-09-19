@@ -77,7 +77,7 @@ builder.Services.AddQuartz(q =>
         );
 
         // supervisor trigger sau 2 phút
-        string supervisorCron = AddMinutesToCron(cron, 2);
+        string supervisorCron = AddMinutesToCron(cron, 10);
         q.AddTrigger(t => t
             .ForJob(escalationSupJobKey)
             .WithIdentity($"EscalationSupervisorTrigger-{index}")
@@ -88,7 +88,7 @@ builder.Services.AddQuartz(q =>
         );
 
         // manager trigger sau 3 phút
-        string managerCron = AddMinutesToCron(cron, 3);
+        string managerCron = AddMinutesToCron(cron, 20);
         q.AddTrigger(t => t
             .ForJob(escalationMgrJobKey)
             .WithIdentity($"EscalationManagerTrigger-{index}")
