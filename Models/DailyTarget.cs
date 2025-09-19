@@ -45,7 +45,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SigmaNotificationBackend.Models
 {
-    [Table("SVN_daily_target_test")]
+    [Table("SVN_daily_target")]
     [Keyless] // Bảng/VIEW không có khóa chính
 
     public class DailyTarget

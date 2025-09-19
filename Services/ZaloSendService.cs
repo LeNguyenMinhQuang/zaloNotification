@@ -553,13 +553,14 @@ namespace SigmaNotificationBackend.Services
                 var t = TimeZoneInfo.ConvertTimeFromUtc(time.ToUniversalTime(), vn);
                 var hour = t.Hour;
                 var minute = t.Minute;
+                var second = t.Second;
 
                 if (hour == 10 && minute >= 10 && minute <= 20) return "08h00 - 10h10";
                 if (hour == 13 && minute >= 0 && minute <= 10) return "11h00 - 13h00";
                 if (hour == 15 && minute >= 10 && minute <= 20) return "13h00 - 15h10";
                 if (hour == 18 && minute >= 5 && minute <= 15) return "15h10 - 18h00";
                 if (hour == 22 && minute >= 25 && minute <= 35) return "18h00 - 20h00";
-                return "unknown";
+                return $"{t:HH:mm:ss dd/MM/yyyy}";
             }
 
             string FormatContent(List<dynamic> groupedMessages)
@@ -592,6 +593,11 @@ namespace SigmaNotificationBackend.Services
                         sb.AppendLine();
                     }
                 }
+
+                // 🔹 THÊM footer giờ VN: "🕒 Gửi lúc HH:mm dd/MM/yyyy"
+                var vn = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                var localSend = TimeZoneInfo.ConvertTimeFromUtc(sendTime.ToUniversalTime(), vn);
+                sb.AppendLine($"🕒 Gửi lúc {localSend:HH:mm dd/MM/yyyy}");
 
                 return sb.ToString().Trim();
 
@@ -744,12 +750,27 @@ namespace SigmaNotificationBackend.Services
                     msg.UserId = msg.UserId + ";" + userId;
 
                 // set cờ đã xem theo cấp (nếu trống)
+                // if (role == "operator" && string.IsNullOrWhiteSpace(msg.isOperatorSeen))
+                //     msg.isOperatorSeen = userId;
+                // else if (role == "supervisor" && string.IsNullOrWhiteSpace(msg.isSupervisorSeen))
+                //     msg.isSupervisorSeen = userId;
+                // else if (role == "manager" && string.IsNullOrWhiteSpace(msg.isManagerSeen))
+                //     msg.isManagerSeen = userId;
+                // trong foreach (var msg in msgs)
+                var nowVN = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow,
+                    TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
+
+                // Lấy tên hiển thị từ bảng Follower
+                var displayName = follower?.Name ?? userId;
+                var seenValue = $"{displayName} ({nowVN:HH:mm dd/MM})";
+
+                // set cờ đã xem theo cấp (nếu trống)
                 if (role == "operator" && string.IsNullOrWhiteSpace(msg.isOperatorSeen))
-                    msg.isOperatorSeen = userId;
+                    msg.isOperatorSeen = seenValue;
                 else if (role == "supervisor" && string.IsNullOrWhiteSpace(msg.isSupervisorSeen))
-                    msg.isSupervisorSeen = userId;
+                    msg.isSupervisorSeen = seenValue;
                 else if (role == "manager" && string.IsNullOrWhiteSpace(msg.isManagerSeen))
-                    msg.isManagerSeen = userId;
+                    msg.isManagerSeen = seenValue;
             }
 
             await _dbcontext.SaveChangesAsync();
