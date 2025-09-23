@@ -14,6 +14,7 @@ builder.Services.AddScoped<CheckAccessTokenService>();
 
 
 builder.Services.AddOpenApi();
+builder.Services.AddMemoryCache();
 
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<DashboardService>();
@@ -24,6 +25,7 @@ builder.Services.AddScoped<EscalationDispatcherService>();
 
 // Thêm dòng này để đăng ký AppDbContext cho job Quartz
 builder.Services.AddScoped<AppDbContext>();
+
 
 builder.Services.AddQuartz(q =>
 {
