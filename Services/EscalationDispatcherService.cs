@@ -219,11 +219,12 @@ public class EscalationDispatcherService : IJob
         if (role == "supervisor")
         {
             var needSupervisor = messages
-                .Where(m => m.isSent == 1
-                         && string.IsNullOrEmpty(m.isOperatorSeen)
-                         && string.IsNullOrEmpty(m.isSupervisorSeen)
-                         && (m.isSentToSupervisor == 0 || m.isSentToSupervisor == null))
-                .GroupBy(m => m.to_department);
+        .Where(m => m.isSent == 1
+                 && string.IsNullOrEmpty(m.isOperatorSeen)
+                 && string.IsNullOrEmpty(m.isSupervisorSeen)
+                 && m.isSentToSupervisor == 0
+                 && (now - m.create_at).TotalMinutes >= 8)   // 👈 đủ "già" ≥ 10'
+        .GroupBy(m => m.to_department);
 
             foreach (var deptGroup in needSupervisor)
             {
@@ -236,13 +237,14 @@ public class EscalationDispatcherService : IJob
         else if (role == "manager")
         {
             var needManager = messages
-                .Where(m => m.isSent == 1
-                         // (nếu bạn muốn chặn khi operator đã xem, thêm điều kiện rỗng cho isOperatorSeen ở đây)
-                         && string.IsNullOrEmpty(m.isOperatorSeen)
-                         && string.IsNullOrEmpty(m.isSupervisorSeen)
-                         && string.IsNullOrEmpty(m.isManagerSeen)
-                         && (m.isSentToManager == 0 || m.isSentToManager == null))
-                .GroupBy(m => m.to_department);
+         .Where(m => m.isSent == 1
+                  && m.isSentToSupervisor == 1                 // 👈 chỉ lấy lô đã escalate supervisor
+                  && string.IsNullOrEmpty(m.isOperatorSeen)
+                  && string.IsNullOrEmpty(m.isSupervisorSeen)
+                  && string.IsNullOrEmpty(m.isManagerSeen)
+                  && m.isSentToManager == 0
+                  && (now - m.create_at).TotalMinutes >= 18)   // 👈 đủ "già" ≥ 20'
+         .GroupBy(m => m.to_department);
 
             foreach (var deptGroup in needManager)
             {

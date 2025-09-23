@@ -81,7 +81,7 @@ namespace SigmaNotificationBackend.Controllers
         private readonly IMemoryCache _cache;
 
         // Điều chỉnh số phút cooldown tại đây
-        private const int COOLDOWN_MINUTES = 15;
+        private const int COOLDOWN_MINUTES = 9;
 
         // Key cache toàn cục cho cooldown
         private const string COOL_KEY = "manual_dispatch_cooldown_global";
