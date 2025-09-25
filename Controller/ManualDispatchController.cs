@@ -1,67 +1,3 @@
-// using System;
-// using System.Threading.Tasks;
-// using Microsoft.AspNetCore.Mvc;
-// using Microsoft.Extensions.Logging;
-// using Quartz;
-
-// namespace SigmaNotificationBackend.Controllers
-// {
-//     [ApiController]
-//     [Route("api/[controller]")]
-//     public class ManualDispatchController : ControllerBase
-//     {
-//         private readonly ISchedulerFactory _schedulerFactory;
-//         private readonly ILogger<ManualDispatchController> _logger;
-
-//         public ManualDispatchController(
-//             ISchedulerFactory schedulerFactory,
-//             ILogger<ManualDispatchController> logger)
-//         {
-//             _schedulerFactory = schedulerFactory;
-//             _logger = logger;
-//         }
-
-//         [HttpGet("trigger")]
-//         public async Task<IActionResult> Trigger()
-//         {
-//             var scheduler = await _schedulerFactory.GetScheduler();
-
-//             // 1) chạy fetch + operator ngay
-//             await scheduler.TriggerJob(new JobKey("ManualDispatcherJob"));
-
-//             // 2) schedule escalation one-off: +2' supervisor
-//             var supJob = JobBuilder.Create<EscalationDispatcherService>()
-//                 .WithIdentity($"ManualEscalationSupervisor-{Guid.NewGuid()}")
-//                 .UsingJobData("Role", "supervisor")
-//                 .Build();
-
-//             var supTrigger = TriggerBuilder.Create()
-//                 .StartAt(DateBuilder.FutureDate(9, IntervalUnit.Minute)) // test 2'
-//                 .Build();
-
-//             await scheduler.ScheduleJob(supJob, supTrigger);
-
-//             // 3) schedule escalation one-off: +3' manager
-//             var mgrJob = JobBuilder.Create<EscalationDispatcherService>()
-//                 .WithIdentity($"ManualEscalationManager-{Guid.NewGuid()}")
-//                 .UsingJobData("Role", "manager")
-//                 .Build();
-
-//             var mgrTrigger = TriggerBuilder.Create()
-//                 .StartAt(DateBuilder.FutureDate(19, IntervalUnit.Minute)) // test 3'
-//                 .Build();
-
-//             await scheduler.ScheduleJob(mgrJob, mgrTrigger);
-
-//             _logger.LogInformation("Manual API called at {time}: operator sent, escalation scheduled (+2'/+3').",
-//                 DateTime.Now);
-
-//             return Ok(new { ok = true });
-//         }
-//     }
-// }
-
-
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -102,6 +38,48 @@ namespace SigmaNotificationBackend.Controllers
         [HttpGet("trigger")]
         public async Task<IActionResult> Trigger()
         {
+            // ========== ⛔ Off-hours guard: cấm gọi 20:00–08:15 và 12:10–13:10 (giờ VN) ==========
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+
+            var nightStart = new TimeSpan(20, 0, 0);   // 20:00
+            var nightEnd = new TimeSpan(8, 15, 0);   // 08:15 (hôm sau)
+
+            var lunchStart = new TimeSpan(12, 10, 0);  // 12:10
+            var lunchEnd = new TimeSpan(13, 10, 0);  // 13:10
+
+            bool inNight = nowLocal.TimeOfDay >= nightStart || nowLocal.TimeOfDay < nightEnd;
+            bool inLunch = nowLocal.TimeOfDay >= lunchStart && nowLocal.TimeOfDay < lunchEnd;
+
+            DateTime? nextAllowed = null;
+            if (inNight)
+            {
+                // nếu đang sau 20:00 → sáng mai 08:15; nếu đang trước 08:15 → hôm nay 08:15
+                nextAllowed = (nowLocal.TimeOfDay >= nightStart)
+                    ? nowLocal.Date.AddDays(1).Add(nightEnd)
+                    : nowLocal.Date.Add(nightEnd);
+            }
+            else if (inLunch)
+            {
+                // đang trong khung trưa → hôm nay 13:10
+                nextAllowed = nowLocal.Date.Add(lunchEnd);
+            }
+
+            if (nextAllowed.HasValue)
+            {
+                var retryAfterSeconds = Math.Max(1, (int)(nextAllowed.Value - nowLocal).TotalSeconds);
+                Response.Headers["Retry-After"] = retryAfterSeconds.ToString();
+
+                return StatusCode(403, new
+                {
+                    ok = false,
+                    message = "Manual trigger bị khóa trong khung giờ 20:00–08:15 và 12:10–13:10 (giờ VN).",
+                    now = nowLocal.ToString("HH:mm:ss dd/MM/yyyy"),
+                    nextAllowed = nextAllowed.Value.ToString("HH:mm:ss dd/MM/yyyy")
+                });
+            }
+            // =======================================================================
+
             // Thời điểm kết thúc cooldown (UTC) để trả về cho client
             DateTimeOffset? cooldownUntil = null;
 

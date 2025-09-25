@@ -36,3 +36,7 @@ where create_at = '2025-09-18 17:24:01.753'
 DELETE FROM dbo.SVN_Messages
 
 DBCC CHECKIDENT('dbo.SVN_Messages', RESEED, 0);
+
+UPDATE dbo.SVN_Messages
+SET isSentToManager = 1
+WHERE id_message In ('13', '14', '15');
