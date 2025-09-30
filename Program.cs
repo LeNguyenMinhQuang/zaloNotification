@@ -10,13 +10,9 @@ using SigmaNotificationBackend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddScoped<CheckAccessTokenService>();
-
-
 builder.Services.AddOpenApi();
 builder.Services.AddMemoryCache();
 
-builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<ScheduledDashboardFetcher>();
 builder.Services.AddScoped<ProductionMessageDispatcherService>();
@@ -31,14 +27,12 @@ builder.Services.AddQuartz(q =>
 {
     var fetcherJobKey = new JobKey("ScheduledDashboardFetcherJob");
     var dispatcherJobKey = new JobKey("ProductionMessageDispatcherJob"); // JobKey mới
-    // var escalationJobKey = new JobKey("EscalationDispatcherJob");
     var escalationSupJobKey = new JobKey("EscalationSupervisorJob");
     var escalationMgrJobKey = new JobKey("EscalationManagerJob");
     var manualJobKey = new JobKey("ManualDispatcherJob");
 
     q.AddJob<ScheduledDashboardFetcher>(opts => opts.WithIdentity(fetcherJobKey));
     q.AddJob<ProductionMessageDispatcherService>(opts => opts.WithIdentity(dispatcherJobKey)); // Đăng ký job mới
-    // q.AddJob<EscalationDispatcherService>(opts => opts.WithIdentity(escalationJobKey));
     q.AddJob<EscalationDispatcherService>(opts => opts.WithIdentity(escalationSupJobKey));
     q.AddJob<EscalationDispatcherService>(opts => opts.WithIdentity(escalationMgrJobKey));
     q.AddJob<ManualDispatcherJob>(opts =>
@@ -102,13 +96,6 @@ builder.Services.AddQuartz(q =>
         );
     }
 
-    // q.AddTrigger(t => t
-    //     .ForJob(escalationJobKey)
-    //     .WithIdentity("EscalationDispatcherTrigger")
-    //     .WithCronSchedule("0 0/5 * * * ?", x => x
-    //         .InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"))
-    //     )
-    // );
     static string AddMinutesToCron(string cron, int minutesToAdd)
     {
         var parts = cron.Split(' '); // ["0","15","10","*","*","?"]
@@ -155,30 +142,30 @@ builder.Services.AddControllers();
 
 
 
-var jwtSettings = builder.Configuration.GetSection("Jwt");
-var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
+// var jwtSettings = builder.Configuration.GetSection("Jwt");
+// var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
 
 
 
-// 2. Cấu hình authentication
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(key)
-    };
-});
+// // 2. Cấu hình authentication
+// builder.Services.AddAuthentication(options =>
+// {
+//     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+//     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+// })
+// .AddJwtBearer(options =>
+// {
+//     options.TokenValidationParameters = new TokenValidationParameters
+//     {
+//         ValidateIssuer = true,
+//         ValidateAudience = true,
+//         ValidateLifetime = true,
+//         ValidateIssuerSigningKey = true,
+//         ValidIssuer = jwtSettings["Issuer"],
+//         ValidAudience = jwtSettings["Audience"],
+//         IssuerSigningKey = new SymmetricSecurityKey(key)
+//     };
+// });
 
 
 
@@ -242,7 +229,7 @@ app.UseRouting();
 app.UseStaticFiles();
 
 app.UseCors("AllowSpecificOrigins");
-app.UseAuthentication();
+// app.UseAuthentication();
 
 // app.UseMiddleware<CurrentUserMiddleware>();
 
