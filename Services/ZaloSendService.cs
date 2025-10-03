@@ -67,6 +67,47 @@ namespace SigmaNotificationBackend.Services
                 _logger.LogInformation("Message sent successfully to user {UserId}", userId);
         }
 
+
+        public async Task SendAckTemplateAsync(string userId, string text, IEnumerable<int> messageIds)
+        {
+            var token = await _tokenStorage.GetCurrentAccessTokenAsync();
+            if (string.IsNullOrEmpty(token)) return;
+
+            var ids = (messageIds ?? Array.Empty<int>()).Distinct().ToList();
+            var idPayload = ids.Count > 0 ? string.Join(",", ids) : "unknown";
+
+            var url = "https://openapi.zalo.me/v3.0/oa/message/cs";
+            var payload = new
+            {
+                recipient = new { user_id = userId },
+                message = new
+                {
+                    text = text,
+                    attachment = new
+                    {
+                        type = "template",
+                        payload = new
+                        {
+                            template_type = "text",
+                            buttons = new[]
+                            {
+                        new { title = "Đã xem", type = "oa.query.show", payload = $"Đã xem tin nhắn: {idPayload}" }
+                    }
+                        }
+                    }
+                }
+            };
+
+            var req = new HttpRequestMessage(HttpMethod.Post, url) { Content = JsonContent.Create(payload) };
+            req.Headers.Add("access_token", token);
+            var resp = await _httpClient.SendAsync(req);
+            var result = await resp.Content.ReadAsStringAsync();
+
+            if (!resp.IsSuccessStatusCode)
+                _logger.LogError("❌ Gửi checklist template thất bại: {Result}", result);
+            else
+                _logger.LogInformation("✅ Gửi checklist template tới {UserId}", userId);
+        }
         public async Task SendCombinedProductionMessageTemplateAsync(
             string userId,
             List<dynamic> messages,

@@ -12,6 +12,10 @@ namespace SigmaNotificationBackend.Services
         // Giữ nguyên chữ ký cũ (dùng khi gửi tin gộp)
         Task SendCombinedProductionMessageTemplateAsync(string userId, List<dynamic> messages, DateTime sendTime, string? extraNote = null);
 
+
+        // ✅ Thêm mới:
+        Task SendAckTemplateAsync(string userId, string text, IEnumerable<int> messageIds);
+
         // ✅ NEW: update nhiều messageId cùng lúc khi người dùng bấm “Đã xem”
         Task MarkMessagesAsViewedByUserAsync(IEnumerable<int> messageIds, string userId);
 

@@ -17,6 +17,7 @@ builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<ScheduledDashboardFetcher>();
 builder.Services.AddScoped<ProductionMessageDispatcherService>();
 builder.Services.AddScoped<EscalationDispatcherService>();
+builder.Services.AddScoped<DailyApiFetcherJob>();
 
 
 // Thêm dòng này để đăng ký AppDbContext cho job Quartz
@@ -95,6 +96,16 @@ builder.Services.AddQuartz(q =>
             .UsingJobData("Role", "manager")
         );
     }
+
+    var dailyApiJobKey = new JobKey("DailyApiFetcherJob");
+    q.AddJob<DailyApiFetcherJob>(opts => opts.WithIdentity(dailyApiJobKey));
+    q.AddTrigger(t => t
+        .ForJob(dailyApiJobKey)
+        .WithIdentity("DailyApiFetcherTrigger")
+        .WithCronSchedule("0 0 8 * * ?", x => x
+            .InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"))
+        )
+    );
 
     static string AddMinutesToCron(string cron, int minutesToAdd)
     {
