@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\buildMultiTargeting\SigmaNotificationBackend.props" />
+</Project>

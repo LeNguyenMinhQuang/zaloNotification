@@ -1,0 +1,133 @@
+[
+  {
+    "ContainingType": "SigmaNotificationBackend.Controllers.AuthController",
+    "Method": "Login",
+    "RelativePath": "api/Auth/api/Auth/Login",
+    "HttpMethod": "",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "LoginRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SigmaNotificationBackend.Controllers.AuthController",
+    "Method": "Login",
+    "RelativePath": "api/Auth/login",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "LoginRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SigmaNotificationBackend.Controllers.DataController",
+    "Method": "GetDashboardData",
+    "RelativePath": "api/Data/GetDashboardData",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "date",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SigmaNotificationBackend.Controllers.DataController",
+    "Method": "SyncDashboard",
+    "RelativePath": "api/Data/SyncDashboard",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dtos",
+        "Type": "System.Collections.Generic.List\u00601[[DashBoardSummaryDto, SigmaNotificationBackend, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SigmaNotificationBackend.Controllers.UsersController",
+    "Method": "GetCurrentUser",
+    "RelativePath": "api/Users/api/Users/GetCurrentUser()",
+    "HttpMethod": "",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SigmaNotificationBackend.Controllers.UsersController",
+    "Method": "GetCurrentUser",
+    "RelativePath": "api/Users/GetCurrentUser",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SigmaNotificationBackend.Controllers.ZaloController",
+    "Method": "ZaloCallback",
+    "RelativePath": "api/Zalo/callback",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "code",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "oa_id",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "error",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "message",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SigmaNotificationBackend.Controllers.ZaloController",
+    "Method": "ZaloWebhook",
+    "RelativePath": "api/Zalo/webhook",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "webhookEvent",
+        "Type": "SigmaNotificationBackend.Models.ZaloWebhookEvent",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]
