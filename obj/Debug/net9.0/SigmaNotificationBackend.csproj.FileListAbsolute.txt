@@ -843,3 +843,4 @@ D:\ZALOOA\zaloNotification-Optimizing\zaloNotification-Optimizing\obj\Debug\net9
 D:\ZALOOA\zaloNotification-Optimizing\zaloNotification-Optimizing\obj\Debug\net9.0\SigmaNotificationBackend.pdb
 D:\ZALOOA\zaloNotification-Optimizing\zaloNotification-Optimizing\obj\Debug\net9.0\SigmaNotificationBackend.genruntimeconfig.cache
 D:\ZALOOA\zaloNotification-Optimizing\zaloNotification-Optimizing\obj\Debug\net9.0\ref\SigmaNotificationBackend.dll
+D:\ZALOOA\zaloNotification-Optimizing\zaloNotification-Optimizing\obj\Debug\net9.0\SigmaNotificationBackend.sourcelink.json

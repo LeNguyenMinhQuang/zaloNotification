@@ -20,6 +20,7 @@ builder.Services.AddScoped<EscalationDispatcherService>();
 builder.Services.AddScoped<DailyApiFetcherJob>();
 
 
+
 // Thêm dòng này để đăng ký AppDbContext cho job Quartz
 builder.Services.AddScoped<AppDbContext>();
 
@@ -43,13 +44,12 @@ builder.Services.AddQuartz(q =>
 
     var cronTimes = new[]
     {
-        // "0 15 10 * * ?",  // 10:15
-        // "0 5 13 * * ?",   // 13:05
-        // // "0 53 15 * * ?",
-        // "0 15 15 * * ?",  // 15:15
-        // "0 10 18 * * ?",  // 18:10 
-        // "0 30 22 * * ?"   // 22:30
-        "0 0 0 * * ?"
+        "0 0 10 * * ?",  // 10:01
+        "0 30 11 * * ?",   // 13:31
+        "0 0 15 * * ?",  // 15:15
+        "0 30 17 * * ?",  // 18:10 
+        "0 0 20 * * ?"   // 22:30
+        // "0 0 0 * * ?"
 
     };
 
@@ -103,12 +103,12 @@ builder.Services.AddQuartz(q =>
         );
     }
 
-     var dailyApiJobKey = new JobKey("DailyApiFetcherJob");
+    var dailyApiJobKey = new JobKey("DailyApiFetcherJob");
     q.AddJob<DailyApiFetcherJob>(opts => opts.WithIdentity(dailyApiJobKey));
     q.AddTrigger(t => t
         .ForJob(dailyApiJobKey)
         .WithIdentity("DailyApiFetcherTrigger")
-        .WithCronSchedule("0 01 8 * * ?", x => x
+        .WithCronSchedule("0 15 8 * * ?", x => x
             .InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"))
         )
     );
@@ -136,7 +136,8 @@ builder.Services.AddQuartz(q =>
 });
 
 
-builder.Services.AddQuartzHostedService();
+// builder.Services.AddQuartzHostedService();
+builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
 
 builder.Logging.AddConsole();

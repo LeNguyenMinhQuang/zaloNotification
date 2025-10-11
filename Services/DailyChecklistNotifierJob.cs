@@ -325,13 +325,12 @@ namespace SigmaNotificationBackend.Jobs
                 var today = DateTime.Now.ToString("yyyyMMdd");
                 var operations = await dashDb.DailyTargets
                     .Where(t => t.Date_time != null
-                             && t.Date_time.StartsWith(today)   // phòng khi Date_time có kèm giờ
+                             && t.Date_time.StartsWith(today)
                              && t.Operation != null)
                     .Select(t => t.Operation!)
                     .Distinct()
                     .ToListAsync();
 
-                // Chuẩn hoá: Injection_POP → Injection ; chứa "walter" → Walter
                 operations = operations
                     .Select(op =>
                     {
@@ -374,7 +373,7 @@ namespace SigmaNotificationBackend.Jobs
 
                         var block = BuildOperationBlock(op, resp.message.Trim());
 
-                        if (appended > 0) sb.AppendLine(); // dòng trống giữa các block
+                        if (appended > 0) sb.AppendLine();
                         sb.Append(block);
                         appended++;
                     }
@@ -425,7 +424,7 @@ namespace SigmaNotificationBackend.Jobs
                     .Distinct()
                     .ToListAsync();
 
-                _logger.LogInformation("DailyApiFetcherJob: tìm thấy {Count} operator (Role=1).", operatorIds.Count);
+                _logger.LogInformation("DailyApiFetcherJob: tìm thấy {Count} operator vao luc" + nowVn, operatorIds.Count);
 
                 if (!operatorIds.Any())
                 {
@@ -460,7 +459,7 @@ namespace SigmaNotificationBackend.Jobs
             int red = CountOccurrences(checklistLine, "🔴");
             string verdict = red >= 1
                 ? "Các bộ phận xin hãy hoàn thành checklist"
-                : "Done";
+                : "Ok";
 
             var formatted = ReformatChecklist(checklistLine);
 
