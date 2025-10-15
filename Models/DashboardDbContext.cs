@@ -18,12 +18,16 @@ namespace SigmaNotificationBackend.Data
 
         public DbSet<DailyTarget> DailyTargets { get; set; }
 
+        public DbSet<SVN_target> SVN_Targets { get; set; }
+
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Vì DashBoardSummaryDto không có khóa chính nên cần khai báo HasNoKey
             modelBuilder.Entity<DashBoardSummaryDto>().HasNoKey();
             modelBuilder.Entity<DailyTarget>().HasNoKey();
+            modelBuilder.Entity<SVN_target>().HasNoKey();
 
         }
 

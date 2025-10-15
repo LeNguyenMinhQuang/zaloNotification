@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace SigmaNotificationBackend.Models
 {
-    [Table("SVN_daily_target")]
+    [Table("SVN_target")]
     [Keyless] // Bảng/VIEW không có khóa chính
 
-    public class DailyTarget
+    public class SVN_target
     {
         // nvarchar(100), Allow Nulls = true
         public string? Operation { get; set; }

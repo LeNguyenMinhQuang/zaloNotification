@@ -55,7 +55,7 @@
             {
                 // 1) LẤY DANH SÁCH OPERATION HÔM NAY từ DailyTargets (yyyyMMdd)
                 var today = DateTime.Now.ToString("yyyyMMdd");
-                var operations = await dashDb.DailyTargets
+                var operations = await dashDb.SVN_Targets
                     .Where(t => t.Date_time != null
                             && t.Date_time.StartsWith(today)
                             && t.Operation != null)
