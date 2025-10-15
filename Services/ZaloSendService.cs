@@ -309,4 +309,6 @@ namespace SigmaNotificationBackend.Services
         public async Task MarkMessageAsViewedByUserAsync(int messageId, string userId)
             => await MarkMessagesAsViewedByUserAsync(new[] { messageId }, userId);
     }
+
+    
 }

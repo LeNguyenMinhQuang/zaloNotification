@@ -17,5 +17,6 @@ namespace SigmaNotificationBackend.Services
 
         // Back-compat: nếu chỗ nào trong code gọi single-id vẫn hoạt động
         Task MarkMessageAsViewedByUserAsync(int messageId, string userId);
+        
     }
 }
