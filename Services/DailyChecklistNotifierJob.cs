@@ -85,7 +85,7 @@
 
                 // 2) Gọi API cho từng operation và gộp thành 1 message
                 var sb = new StringBuilder();
-                sb.AppendLine($"🔔 Time: {DateTime.Now:HH:mm:ss dd/MM/yyyy}");
+                // sb.AppendLine($"🔔 Time: {DateTime.Now:HH:mm:ss dd/MM/yyyy}");
 
                 int appended = 0;
                 foreach (var op in operations)
