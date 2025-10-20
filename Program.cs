@@ -113,6 +113,19 @@ builder.Services.AddQuartz(q =>
         )
     );
 
+    // 1) Đăng ký job (thêm cùng chỗ bạn AddJob các job khác)
+    var dailyGreetingJobKey = new JobKey("DailyGreetingJob");
+    q.AddJob<DailyGreetingJob>(opts => opts.WithIdentity(dailyGreetingJobKey));
+
+    // 2) Tạo trigger để chạy mỗi ngày 08:00 (giờ VN)
+    q.AddTrigger(t => t
+        .ForJob(dailyGreetingJobKey)
+        .WithIdentity("DailyGreetingTrigger")
+        .WithCronSchedule("0 0 8 * * ?", x => x
+            .InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"))
+        )
+    );
+
     static string AddMinutesToCron(string cron, int minutesToAdd)
     {
         var parts = cron.Split(' '); // ["0","15","10","*","*","?"]
